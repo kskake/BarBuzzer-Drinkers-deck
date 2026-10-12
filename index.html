@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>The Drinker's Deck – BarBuzzer</title>
+  <meta name="description" content="The Drinker's Deck: three classic drinking card games in one free browser app — Higher or Lower, Kings Cup, and The Gauntlet. Dark-themed and mobile-first for groups of 2–8.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <style>
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg:            #0a0a0f;
+      --bg2:           #12121a;
+      --card-bg:       #1a1a26;
+      --card-border:   rgba(255,255,255,0.08);
+      --amber:         #ffb300;
+      --amber-glow:    rgba(255,179,0,0.35);
+      --amber-soft:    rgba(255,179,0,0.12);
+      --purple:        #a855f7;
+      --purple-glow:   rgba(168,85,247,0.35);
+      --purple-soft:   rgba(168,85,247,0.12);
+      --text:          #f0eef8;
+      --muted:         #8a8a9a;
+      --danger:        #ff4d6d;
+      --success:       #22d3a5;
+      --cyan:          #22d3ee;
+      --cyan-glow:     rgba(34,211,238,0.35);
+      --cyan-soft:     rgba(34,211,238,0.12);
+      --radius:        14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== GLOBAL HEADER ===== */
+    #game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(10,10,15,0.95);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    #game-header h1 {
+      font-size: 1.125rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: var(--amber);
+      text-shadow: 0 0 12px var(--amber-glow);
+    }
+
+    #game-header .header-sub {
+      font-size: 0.65rem;
+      color: var(--muted);
+      display: block;
+      letter-spacing: 0.04em;
+    }
+
+    .home-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .home-link:hover { color: var(--amber); }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; align-items: center; padding: 1.5rem 1rem; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* ===== DASHBOARD ===== */
+    #dashboard { max-width: 480px; width: 100%; margin: 0 auto; }
+    .dash-title {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .dash-title h2 {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--amber);
+      text-shadow: 0 0 18px var(--amber-glow);
+      letter-spacing: 0.04em;
+    }
+    .dash-title p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.4rem;
+    }
+
+    .game-cards { display: flex; flex-direction: column; gap: 1rem; }
+
+    .game-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .game-card:hover, .game-card:active {
+      transform: scale(1.02);
+    }
+
+    .game-card.amber-card:hover, .game-card.amber-card:active {
+      border-color: var(--amber);
+      box-shadow: 0 0 24px var(--amber-glow), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .game-card.purple-card:hover, .game-card.purple-card:active {
+      border-color: var(--purple);
+      box-shadow: 0 0 24px var(--purple-glow), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .game-card.danger-card:hover, .game-card.danger-card:active {
+      border-color: var(--danger);
+      box-shadow: 0 0 24px rgba(255,77,109,0.35), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .game-card.success-card:hover, .game-card.success-card:active {
+      border-color: var(--success);
+      box-shadow: 0 0 24px rgba(34,211,165,0.35), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .game-card.cyan-card:hover, .game-card.cyan-card:active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 24px var(--cyan-glow), 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .game-card-icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+      width: 52px;
+      text-align: center;
+    }
+
+    .game-card-info { flex: 1; }
+    .game-card-info h3 { font-size: 1rem; font-weight: 800; letter-spacing: 0.04em; }
+    .game-card-info p  { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.4; }
+
+    .amber-card h3 { color: var(--amber); }
+    .purple-card h3 { color: var(--purple); }
+    .danger-card h3 { color: var(--danger); }
+    .success-card h3 { color: var(--success); }
+    .cyan-card h3 { color: var(--cyan); }
+
+    .game-card-arrow {
+      font-size: 1.25rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ===== GAME SCREEN HEADER ===== */
+    .game-screen-top {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 1.25rem;
+    }
+
+    .back-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { color: var(--amber); border-color: var(--amber); }
+
+    .game-screen-title {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .rules-btn {
+      background: none;
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .rules-btn:hover { color: var(--purple); border-color: var(--purple); }
+
+    /* ===== RULES PANEL ===== */
+    .rules-panel {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--purple);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 1rem;
+      animation: slideDown 0.25s ease;
+    }
+    .rules-panel.visible { display: block; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .rules-panel h4 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--purple);
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.04em;
+    }
+    .rules-panel ul {
+      list-style: none;
+      padding: 0;
+    }
+    .rules-panel li {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 0.2rem 0;
+      line-height: 1.5;
+    }
+    .rules-panel li::before { content: "• "; color: var(--amber); }
+
+    /* ===== CARD DISPLAY ===== */
+    .card-area {
+      perspective: 800px;
+      margin: 0.75rem 0;
+    }
+
+    .playing-card {
+      width: 140px;
+      height: 200px;
+      border-radius: 14px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 3px rgba(255,255,255,0.06);
+      transition: transform 0.45s cubic-bezier(0.4,0,0.2,1);
+      transform-style: preserve-3d;
+      cursor: default;
+    }
+
+    .playing-card.deal-in {
+      animation: dealIn 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+
+    @keyframes dealIn {
+      from { transform: translateY(-60px) rotate(-8deg) scale(0.85); opacity: 0; }
+      to   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    }
+
+    .playing-card.shake {
+      animation: cardShake 0.45s ease;
+    }
+
+    @keyframes cardShake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-10px) rotate(-3deg); }
+      40%      { transform: translateX(10px)  rotate(3deg); }
+      60%      { transform: translateX(-7px)  rotate(-2deg); }
+      80%      { transform: translateX(7px)   rotate(2deg); }
+    }
+
+    .playing-card.flip-out {
+      animation: flipOut 0.22s ease forwards;
+    }
+
+    .playing-card.flip-in {
+      animation: flipIn 0.22s ease forwards;
+    }
+
+    @keyframes flipOut {
+      from { transform: rotateY(0deg); }
+      to   { transform: rotateY(90deg); opacity: 0; }
+    }
+
+    @keyframes flipIn {
+      from { transform: rotateY(-90deg); opacity: 0; }
+      to   { transform: rotateY(0deg); opacity: 1; }
+    }
+
+    .card-value {
+      font-size: 2.25rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .card-suit {
+      font-size: 1.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .card-corner {
+      position: absolute;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .card-corner.tl { top: 8px; left: 10px; }
+    .card-corner.br { bottom: 8px; right: 10px; transform: rotate(180deg); }
+
+    .card-red  { color: #d40000; }
+    .card-black { color: #111; }
+
+    /* Back of card */
+    .card-back {
+      background: linear-gradient(135deg, #1a1a3e 0%, #2d1b6e 50%, #1a1a3e 100%);
+      border: 2px solid rgba(168,85,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-back-pattern {
+      font-size: 2rem;
+      opacity: 0.4;
+    }
+
+    /* Face-down fanned deck indicator */
+    .deck-indicator {
+      position: relative;
+      width: 140px;
+      height: 200px;
+      margin: 0.75rem 0;
+    }
+    .deck-indicator .deck-layer {
+      position: absolute;
+      width: 134px;
+      height: 192px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1a1a3e 0%, #2d1b6e 100%);
+      border: 1.5px solid rgba(168,85,247,0.25);
+    }
+    .deck-indicator .deck-layer:nth-child(1) { top: 6px; left: 6px; }
+    .deck-indicator .deck-layer:nth-child(2) { top: 3px; left: 3px; }
+    .deck-indicator .deck-layer:nth-child(3) { top: 0; left: 0; display: flex; align-items: center; justify-content: center; }
+    .deck-count-badge {
+      background: var(--amber);
+      color: #000;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 480px;
+      margin-top: 0.75rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.875rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+      letter-spacing: 0.04em;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    .btn-amber {
+      background: linear-gradient(135deg, var(--amber) 0%, #ff8c00 100%);
+      color: #000;
+      box-shadow: 0 4px 16px var(--amber-glow);
+    }
+    .btn-amber:hover { box-shadow: 0 6px 24px var(--amber-glow); }
+
+    .btn-purple {
+      background: linear-gradient(135deg, var(--purple) 0%, #7c3aed 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--purple-glow);
+    }
+    .btn-purple:hover { box-shadow: 0 6px 24px var(--purple-glow); }
+
+    .btn-ghost {
+      background: var(--card-bg);
+      color: var(--muted);
+      border: 1.5px solid var(--card-border);
+    }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger) 0%, #c92b4b 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(255,77,109,0.3);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+      color: #000;
+      box-shadow: 0 4px 16px rgba(34,211,165,0.3);
+    }
+
+    .btn-dark {
+      background: linear-gradient(135deg, #3a3a4a 0%, #1a1a26 100%);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .btn-dark:hover { border-color: rgba(255,255,255,0.3); box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+
+    .btn-cyan {
+      background: linear-gradient(135deg, var(--cyan) 0%, #0891b2 100%);
+      color: #000;
+      box-shadow: 0 4px 16px var(--cyan-glow);
+    }
+    .btn-cyan:hover { box-shadow: 0 6px 24px var(--cyan-glow); }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .info-box.amber-accent { border-color: var(--amber); }
+    .info-box.purple-accent { border-color: var(--purple); }
+    .info-box.danger-accent { border-color: var(--danger); }
+
+    /* ===== STATUS ROW ===== */
+    .status-row {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 0.75rem;
+    }
+    .status-pill {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.5rem 0.6rem;
+      text-align: center;
+    }
+    .status-pill .sp-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .status-pill .sp-value {
+      font-size: 1.25rem;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+    .sp-value.amber { color: var(--amber); text-shadow: 0 0 8px var(--amber-glow); }
+    .sp-value.purple { color: var(--purple); text-shadow: 0 0 8px var(--purple-glow); }
+    .sp-value.danger { color: var(--danger); }
+    .sp-value.success { color: var(--success); }
+    .sp-value.cyan { color: var(--cyan); text-shadow: 0 0 8px var(--cyan-glow); }
+
+    /* ===== RESULT OVERLAY ===== */
+    .result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .result-overlay.visible { display: flex; }
+
+    .result-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 2rem 1.75rem;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .result-card h3 { font-size: 1.6rem; font-weight: 900; margin-bottom: 0.5rem; }
+    .result-card p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .result-card .big-emoji { font-size: 3.5rem; margin-bottom: 0.75rem; display: block; }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(20,20,30,0.97);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 0.7rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      z-index: 300;
+      transition: transform 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== KINGS CUP SPECIFICS ===== */
+    .kings-prompt-box {
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(135deg, var(--purple-soft), var(--amber-soft));
+      border: 1.5px solid var(--purple);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      margin: 0.75rem 0;
+    }
+    .kings-prompt-box .rule-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--amber);
+      margin-bottom: 0.4rem;
+    }
+    .kings-prompt-box .rule-desc {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .kings-prompt-box .rule-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    /* ===== GAUNTLET SPECIFICS ===== */
+    .gauntlet-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 1.75rem 1.5rem;
+      text-align: center;
+      margin: 0.75rem 0;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .gauntlet-card.tod-truth  { border: 2px solid var(--amber); box-shadow: 0 0 20px var(--amber-glow); }
+    .gauntlet-card.tod-drink  { border: 2px solid var(--danger); box-shadow: 0 0 20px rgba(255,77,109,0.3); }
+    .gauntlet-card.tod-group  { border: 2px solid var(--purple); box-shadow: 0 0 20px var(--purple-glow); }
+
+    .gauntlet-type-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      margin-bottom: 0.75rem;
+    }
+    .badge-truth  { background: var(--amber-soft);  color: var(--amber); }
+    .badge-drink  { background: rgba(255,77,109,0.12); color: var(--danger); }
+    .badge-group  { background: var(--purple-soft); color: var(--purple); }
+
+    .gauntlet-text {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .gauntlet-timer {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--amber);
+      text-shadow: 0 0 12px var(--amber-glow);
+      margin-top: 0.5rem;
+    }
+
+    /* ===== HIGHER LOWER GUESS AREA ===== */
+    .hl-sip-count {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--amber);
+      text-shadow: 0 0 20px var(--amber-glow);
+      text-align: center;
+      line-height: 1;
+    }
+    .hl-sip-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.2rem;
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar-wrap {
+      width: 100%;
+      max-width: 480px;
+      height: 5px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--amber), var(--purple));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* ===== RESPONSIVE ADJUSTMENTS ===== */
+    @media (max-height: 640px) {
+      .playing-card { width: 110px; height: 156px; }
+      .deck-indicator { width: 110px; height: 156px; }
+      .card-value { font-size: 1.75rem; }
+    }
+
+    @media (min-width: 640px) {
+      .screen { padding: 2rem 1.5rem; }
+    }
+
+    /* ===== IRISH SNAP SPECIFICS ===== */
+    .is-count-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+    .is-count-display {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--amber);
+      text-shadow: 0 0 20px var(--amber-glow);
+      text-align: center;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .snap-btn {
+      width: 100%;
+      max-width: 480px;
+      padding: 1.25rem;
+      font-size: 1.75rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--danger) 0%, #c92b4b 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 30px rgba(255,77,109,0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+      letter-spacing: 0.08em;
+      margin-top: 0.75rem;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .snap-btn:active { transform: scale(0.94); box-shadow: 0 2px 12px rgba(255,77,109,0.3); }
+    .snap-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ===== BLACKJACK BLITZ SPECIFICS ===== */
+    .bj-hand {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      width: 100%;
+      max-width: 480px;
+      padding: 0.5rem 0;
+    }
+    .mini-card {
+      width: 76px;
+      height: 108px;
+      border-radius: 10px;
+      background: #fff;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .mini-card .mc-value {
+      font-size: 1.5rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .mini-card .mc-suit {
+      font-size: 1rem;
+      margin-top: 0.1rem;
+    }
+    .mini-card .mc-corner {
+      position: absolute;
+      font-size: 0.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+    }
+    .mini-card .mc-corner.tl { top: 5px; left: 7px; }
+    .mini-card .mc-corner.br { bottom: 5px; right: 7px; transform: rotate(180deg); }
+    .bj-score-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+    .bj-score-display {
+      font-size: 3rem;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1;
+    }
+    .bj-score-safe    { color: var(--success); text-shadow: 0 0 16px rgba(34,211,165,0.4); }
+    .bj-score-warning { color: var(--amber);   text-shadow: 0 0 16px var(--amber-glow); }
+    .bj-score-bust    { color: var(--danger);  text-shadow: 0 0 16px rgba(255,77,109,0.4); }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <!-- ===== STICKY GLOBAL HEADER ===== -->
+  <header id="game-header" role="banner">
+    <div>
+      <h1>🃏 The Drinker's Deck</h1>
+      <span class="header-sub">BARBUZZER CARD GAMES</span>
+    </div>
+    <a href="https://www.barbuzzer.com/" class="home-link" href="https://www.barbuzzer.com/" aria-label="Return to BarBuzzer home">🏠 Home</a>
+  </header>
+
+  <!-- ===== DASHBOARD SCREEN ===== -->
+  <section id="screen-dashboard" class="screen active" aria-label="Game selection dashboard">
+    <div id="dashboard">
+      <div class="dash-title">
+        <h2>Choose Your Game</h2>
+        <p>Seven classic drinking card games. Pick your poison. 🍺</p>
+      </div>
+
+      <div class="game-cards" role="list">
+        <div class="game-card amber-card" role="listitem" tabindex="0"
+             onclick="launchGame('higher-lower')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('higher-lower')"
+             aria-label="Play Higher or Lower card game">
+          <div class="game-card-icon">🔼</div>
+          <div class="game-card-info">
+            <h3>HIGHER OR LOWER</h3>
+            <p>Guess the next card. Right? Pass sips. Wrong? Drink! Sip count grows with every win.</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card purple-card" role="listitem" tabindex="0"
+             onclick="launchGame('kings-cup')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('kings-cup')"
+             aria-label="Play Kings Cup card game">
+          <div class="game-card-icon">👑</div>
+          <div class="game-card-info">
+            <h3>KINGS CUP</h3>
+            <p>Draw a card, trigger the rule. From Waterfall to Make a Rule — classics await.</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card danger-card" role="listitem" tabindex="0"
+             onclick="launchGame('gauntlet')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('gauntlet')"
+             aria-label="Play The Gauntlet card game">
+          <div class="game-card-icon">⚡</div>
+          <div class="game-card-info">
+            <h3>THE GAUNTLET</h3>
+            <p>Rapid-fire Truth or Drink &amp; Group Challenges. Survive the deck. No mercy.</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card success-card" role="listitem" tabindex="0"
+             onclick="launchGame('red-black')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('red-black')"
+             aria-label="Play Red or Black card game">
+          <div class="game-card-icon">🔴</div>
+          <div class="game-card-info">
+            <h3>RED OR BLACK</h3>
+            <p>Guess the color of the next card. Red or Black? Right = pass sips, Wrong = drink!</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card cyan-card" role="listitem" tabindex="0"
+             onclick="launchGame('odds-evens')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('odds-evens')"
+             aria-label="Play Odds or Evens card game">
+          <div class="game-card-icon">🔢</div>
+          <div class="game-card-info">
+            <h3>ODDS OR EVENS</h3>
+            <p>Is the next card Odd or Even? Face cards count as their numeric values.</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card danger-card" role="listitem" tabindex="0"
+             onclick="launchGame('irish-snap')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('irish-snap')"
+             aria-label="Play Irish Snap card game">
+          <div class="game-card-icon">⚡</div>
+          <div class="game-card-info">
+            <h3>IRISH SNAP</h3>
+            <p>Cards auto-deal while counting Ace to King. If the card matches the count, hit SNAP! Miss it or snap wrong? Drink!</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+
+        <div class="game-card purple-card" role="listitem" tabindex="0"
+             onclick="launchGame('blackjack-blitz')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')launchGame('blackjack-blitz')"
+             aria-label="Play Blackjack Blitz card game">
+          <div class="game-card-icon">🃏</div>
+          <div class="game-card-info">
+            <h3>BLACKJACK BLITZ</h3>
+            <p>Get as close to 21 without going over. Bust = you drink. Stay = give sips equal to (21 - your score)!</p>
+          </div>
+          <div class="game-card-arrow">›</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HIGHER OR LOWER SCREEN ===== -->
+  <section id="screen-higher-lower" class="screen" aria-label="Higher or Lower game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title amber" style="color:var(--amber)">🔼 HIGHER OR LOWER</span>
+      <button class="rules-btn" onclick="toggleRules('hl')" aria-expanded="false" aria-controls="hl-rules">Rules</button>
+    </div>
+
+    <div id="hl-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>A card is revealed. Guess if the next card is Higher or Lower.</li>
+        <li>Correct guess? The sip count rises by 1 — pass sips to someone else!</li>
+        <li>Wrong guess? You drink the current sip count. Count resets to 1.</li>
+        <li>Ace = highest card (14). Ties: it's a free pass.</li>
+        <li>Deck reshuffles automatically when empty.</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="hl-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Current Sips</div>
+        <div class="sp-value purple" id="hl-sip-display">1</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Streak</div>
+        <div class="sp-value success" id="hl-streak">0</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" aria-hidden="true">
+      <div class="progress-bar-fill" id="hl-progress" style="width:100%"></div>
+    </div>
+
+    <div class="card-area" id="hl-card-area">
+      <div class="playing-card deal-in" id="hl-current-card" aria-live="polite" aria-label="Current card">
+        <div class="card-corner tl">
+          <span id="hl-corner-tl-v"></span><br>
+          <span id="hl-corner-tl-s"></span>
+        </div>
+        <div class="card-value card-black" id="hl-card-value"></div>
+        <div class="card-suit" id="hl-card-suit"></div>
+        <div class="card-corner br">
+          <span id="hl-corner-br-v"></span><br>
+          <span id="hl-corner-br-s"></span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin:0.5rem 0 0.25rem;">Will the next card be…</p>
+
+    <div class="btn-row" role="group" aria-label="Guess higher or lower">
+      <button class="btn btn-amber" id="hl-btn-higher" onclick="hlGuess('higher')" aria-label="Guess Higher">⬆ Higher</button>
+      <button class="btn btn-ghost"  id="hl-btn-newdeck" onclick="hlNewGame()" aria-label="New deck">🔀 New Deck</button>
+      <button class="btn btn-purple" id="hl-btn-lower"  onclick="hlGuess('lower')"  aria-label="Guess Lower">⬇ Lower</button>
+    </div>
+  </section>
+
+  <!-- ===== KINGS CUP SCREEN ===== -->
+  <section id="screen-kings-cup" class="screen" aria-label="Kings Cup game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--purple)">👑 KINGS CUP</span>
+      <button class="rules-btn" onclick="toggleRules('kc')" aria-expanded="false" aria-controls="kc-rules">Rules</button>
+    </div>
+
+    <div id="kc-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>Players take turns drawing a card from the deck.</li>
+        <li>Each card value triggers a specific rule — read it aloud and follow it!</li>
+        <li>When a King is drawn, pour some of your drink into the King's Cup.</li>
+        <li>The 4th King drawn must finish the King's Cup — shame (and glory) await.</li>
+        <li>Game ends when all 4 Kings have been drawn.</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="kc-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Kings Drawn</div>
+        <div class="sp-value danger" id="kc-kings-count">0 / 4</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" aria-hidden="true">
+      <div class="progress-bar-fill" id="kc-progress" style="width:100%"></div>
+    </div>
+
+    <div class="card-area" id="kc-card-area">
+      <div class="deck-indicator" id="kc-deck-visual" aria-label="Card deck, tap to draw" role="button" tabindex="0"
+           onclick="kcDraw()" onkeydown="if(event.key==='Enter'||event.key===' ')kcDraw()">
+        <div class="deck-layer"></div>
+        <div class="deck-layer"></div>
+        <div class="deck-layer">
+          <span class="deck-count-badge" id="kc-deck-badge">52</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="kc-prompt-area" style="width:100%;max-width:480px;">
+      <div class="kings-prompt-box" id="kc-prompt-box" style="display:none;" role="alert" aria-live="polite">
+        <div class="rule-title" id="kc-rule-title"></div>
+        <div class="rule-desc"  id="kc-rule-desc"></div>
+        <div class="rule-sub"   id="kc-rule-sub"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-purple" id="kc-draw-btn" onclick="kcDraw()" aria-label="Draw a card">🃏 Draw Card</button>
+      <button class="btn btn-ghost"  onclick="kcNewGame()" aria-label="Start new game">🔀 New Game</button>
+    </div>
+  </section>
+
+  <!-- ===== GAUNTLET SCREEN ===== -->
+  <section id="screen-gauntlet" class="screen" aria-label="The Gauntlet game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--danger)">⚡ THE GAUNTLET</span>
+      <button class="rules-btn" onclick="toggleRules('gn')" aria-expanded="false" aria-controls="gn-rules">Rules</button>
+    </div>
+
+    <div id="gn-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>Draw a card — it reveals a Truth, a Drink dare, or a Group Challenge.</li>
+        <li>TRUTH: Answer honestly — or drink 2!</li>
+        <li>DRINK: Do the dare or drink the number of sips shown.</li>
+        <li>GROUP CHALLENGE: Everyone participates — last to finish drinks!</li>
+        <li>Work through the full deck. Most challenges completed wins!</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="gn-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Completed</div>
+        <div class="sp-value success" id="gn-completed">0</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Skipped</div>
+        <div class="sp-value danger" id="gn-skipped">0</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" aria-hidden="true">
+      <div class="progress-bar-fill" id="gn-progress" style="width:100%"></div>
+    </div>
+
+    <div id="gn-prompt-area" style="width:100%;max-width:480px;">
+      <!-- Initial state: show draw button -->
+      <div id="gn-start-hint" class="info-box" style="text-align:center;padding:2rem;">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem;">⚡</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:0.4rem;">Ready for the Gauntlet?</div>
+        <div style="font-size:0.8rem;color:var(--muted);">Draw your first card to begin the challenge.</div>
+      </div>
+      <div class="gauntlet-card" id="gn-challenge-box" style="display:none;" role="alert" aria-live="polite">
+        <span class="gauntlet-type-badge" id="gn-type-badge"></span>
+        <div class="gauntlet-text" id="gn-challenge-text"></div>
+        <div class="gauntlet-timer" id="gn-timer" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" id="gn-action-row">
+      <button class="btn btn-danger"  id="gn-draw-btn"  onclick="gnDraw()"     aria-label="Draw challenge card">⚡ Draw Card</button>
+      <button class="btn btn-success" id="gn-done-btn"  onclick="gnComplete()" style="display:none;" aria-label="Mark challenge complete">✓ Done!</button>
+      <button class="btn btn-ghost"   id="gn-skip-btn"  onclick="gnSkip()"     style="display:none;" aria-label="Skip challenge">Skip (+2🍺)</button>
+    </div>
+  </section>
+
+  <!-- ===== RED OR BLACK SCREEN ===== -->
+  <section id="screen-red-black" class="screen" aria-label="Red or Black game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--success)">🔴 RED OR BLACK</span>
+      <button class="rules-btn" onclick="toggleRules('rb')" aria-expanded="false" aria-controls="rb-rules">Rules</button>
+    </div>
+
+    <div id="rb-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>A card is revealed. Guess if the next card is Red or Black.</li>
+        <li>Hearts &amp; Diamonds = Red. Spades &amp; Clubs = Black.</li>
+        <li>Correct guess? The sip count rises by 1 — pass sips to someone else!</li>
+        <li>Wrong guess? You drink the current sip count. Count resets to 1.</li>
+        <li>Deck reshuffles automatically when empty.</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="rb-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Current Sips</div>
+        <div class="sp-value purple" id="rb-sip-display">1</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Streak</div>
+        <div class="sp-value success" id="rb-streak">0</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" aria-hidden="true">
+      <div class="progress-bar-fill" id="rb-progress" style="width:100%"></div>
+    </div>
+
+    <div class="card-area" id="rb-card-area">
+      <div class="playing-card deal-in" id="rb-current-card" aria-live="polite" aria-label="Current card">
+        <div class="card-corner tl">
+          <span id="rb-corner-tl-v"></span><br>
+          <span id="rb-corner-tl-s"></span>
+        </div>
+        <div class="card-value card-black" id="rb-card-value"></div>
+        <div class="card-suit" id="rb-card-suit"></div>
+        <div class="card-corner br">
+          <span id="rb-corner-br-v"></span><br>
+          <span id="rb-corner-br-s"></span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin:0.5rem 0 0.25rem;">Will the next card be…</p>
+
+    <div class="btn-row" role="group" aria-label="Guess red or black">
+      <button class="btn btn-danger"  id="rb-btn-red"     onclick="rbGuess('red')"   aria-label="Guess Red">🔴 Red</button>
+      <button class="btn btn-ghost"   id="rb-btn-newdeck" onclick="rbNewGame()"      aria-label="New deck">🔀 New Deck</button>
+      <button class="btn btn-dark"    id="rb-btn-black"   onclick="rbGuess('black')" aria-label="Guess Black">⚫ Black</button>
+    </div>
+  </section>
+
+  <!-- ===== ODDS OR EVENS SCREEN ===== -->
+  <section id="screen-odds-evens" class="screen" aria-label="Odds or Evens game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--cyan)">🔢 ODDS OR EVENS</span>
+      <button class="rules-btn" onclick="toggleRules('oe')" aria-expanded="false" aria-controls="oe-rules">Rules</button>
+    </div>
+
+    <div id="oe-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>A card is revealed. Guess if the next card's value is Odd or Even.</li>
+        <li>Ace = 1 (Odd), Jack = 11 (Odd), Queen = 12 (Even), King = 13 (Odd).</li>
+        <li>Correct guess? The sip count rises by 1 — pass sips to someone else!</li>
+        <li>Wrong guess? You drink the current sip count. Count resets to 1.</li>
+        <li>Deck reshuffles automatically when empty.</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="oe-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Current Sips</div>
+        <div class="sp-value purple" id="oe-sip-display">1</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Streak</div>
+        <div class="sp-value cyan" id="oe-streak">0</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap" aria-hidden="true">
+      <div class="progress-bar-fill" id="oe-progress" style="width:100%"></div>
+    </div>
+
+    <div class="card-area" id="oe-card-area">
+      <div class="playing-card deal-in" id="oe-current-card" aria-live="polite" aria-label="Current card">
+        <div class="card-corner tl">
+          <span id="oe-corner-tl-v"></span><br>
+          <span id="oe-corner-tl-s"></span>
+        </div>
+        <div class="card-value card-black" id="oe-card-value"></div>
+        <div class="card-suit" id="oe-card-suit"></div>
+        <div class="card-corner br">
+          <span id="oe-corner-br-v"></span><br>
+          <span id="oe-corner-br-s"></span>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin:0.5rem 0 0.25rem;">Will the next card be…</p>
+
+    <div class="btn-row" role="group" aria-label="Guess odd or even">
+      <button class="btn btn-amber"  id="oe-btn-odd"     onclick="oeGuess('odd')"   aria-label="Guess Odd">🔢 Odd</button>
+      <button class="btn btn-ghost"  id="oe-btn-newdeck" onclick="oeNewGame()"      aria-label="New deck">🔀 New Deck</button>
+      <button class="btn btn-cyan"   id="oe-btn-even"    onclick="oeGuess('even')"  aria-label="Guess Even">🔣 Even</button>
+    </div>
+  </section>
+
+  <!-- ===== IRISH SNAP SCREEN ===== -->
+  <section id="screen-irish-snap" class="screen" aria-label="Irish Snap game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="isStopGame(); goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--danger)">⚡ IRISH SNAP</span>
+      <button class="rules-btn" onclick="toggleRules('is')" aria-expanded="false" aria-controls="is-rules">Rules</button>
+    </div>
+
+    <div id="is-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>Cards auto-deal while a counter counts Ace → 2 → 3 → … → King, then loops.</li>
+        <li>The Spoken Count is shown above the card each round.</li>
+        <li>If the card's value matches the Spoken Count — hit SNAP!</li>
+        <li>Snap correctly: Pass 3 sips to someone else!</li>
+        <li>Snap wrong (no match): Drink 2 sips!</li>
+        <li>Miss a match (next card dealt before you snap): Drink 2 sips!</li>
+      </ul>
+    </div>
+
+    <div class="status-row">
+      <div class="status-pill">
+        <div class="sp-label">Cards Left</div>
+        <div class="sp-value amber" id="is-deck-count">52</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Snaps Hit</div>
+        <div class="sp-value success" id="is-snaps-hit">0</div>
+      </div>
+      <div class="status-pill">
+        <div class="sp-label">Misses</div>
+        <div class="sp-value danger" id="is-misses">0</div>
+      </div>
+    </div>
+
+    <div id="is-count-area" style="width:100%;max-width:480px;text-align:center;margin:0.5rem 0 0.25rem;">
+      <div class="is-count-label">Spoken Count</div>
+      <div class="is-count-display" id="is-spoken-count">—</div>
+    </div>
+
+    <div class="card-area" id="is-card-area">
+      <div class="playing-card card-back" id="is-current-card" aria-live="polite" aria-label="Current card">
+        <div class="card-back-pattern">🃏</div>
+      </div>
+    </div>
+
+    <button class="snap-btn" id="is-snap-btn" onclick="isHandleSnap()" disabled aria-label="SNAP!">⚡ SNAP!</button>
+
+    <div class="btn-row" style="margin-top:0.75rem;">
+      <button class="btn btn-danger"  id="is-start-btn"   onclick="isStartGame()" aria-label="Start Irish Snap">▶ Start</button>
+      <button class="btn btn-ghost"   id="is-stop-btn"    onclick="isStopGame()"  style="display:none;" aria-label="Stop game">■ Stop</button>
+      <button class="btn btn-ghost"   id="is-newgame-btn" onclick="isNewGame()"   aria-label="New game">🔀 New Game</button>
+    </div>
+  </section>
+
+  <!-- ===== BLACKJACK BLITZ SCREEN ===== -->
+  <section id="screen-blackjack-blitz" class="screen" aria-label="Blackjack Blitz game">
+    <div class="game-screen-top">
+      <button class="back-btn" onclick="goHome()" aria-label="Return to game selection">← Back</button>
+      <span class="game-screen-title" style="color:var(--purple)">🃏 BLACKJACK BLITZ</span>
+      <button class="rules-btn" onclick="toggleRules('bj')" aria-expanded="false" aria-controls="bj-rules">Rules</button>
+    </div>
+
+    <div id="bj-rules" class="rules-panel" role="region" aria-label="Game rules">
+      <h4>📖 HOW TO PLAY</h4>
+      <ul>
+        <li>You're dealt 2 cards. Get as close to 21 without going over!</li>
+        <li>Number cards = face value. J / Q / K = 10. Ace = 11 (or 1 to avoid bust).</li>
+        <li>Hit: Draw another card. Stay: Lock in your score.</li>
+        <li>Bust (over 21): You drink 3 sips!</li>
+        <li>Stay at 21 or under: Give out (21 − your score) sips to others!</li>
+        <li>Perfect 21: Give out 5 sips — legendary hand!</li>
+      </ul>
+    </div>
+
+    <div style="width:100%;max-width:480px;text-align:center;margin:0.5rem 0 0.25rem;">
+      <div class="bj-score-label">Your Score</div>
+      <div class="bj-score-display bj-score-safe" id="bj-score">—</div>
+    </div>
+
+    <div class="bj-hand" id="bj-hand" aria-live="polite" aria-label="Your hand" role="region"></div>
+
+    <div class="btn-row" id="bj-action-row" style="margin-top:0.75rem;">
+      <button class="btn btn-success" id="bj-btn-hit"  onclick="bjHit()"  aria-label="Hit - draw another card">🃏 Hit</button>
+      <button class="btn btn-amber"   id="bj-btn-stay" onclick="bjStay()" aria-label="Stay - lock in score">✋ Stay</button>
+    </div>
+
+    <div class="btn-row" id="bj-newgame-row" style="display:none;margin-top:0.75rem;">
+      <button class="btn btn-ghost" id="bj-btn-newgame" onclick="bjNewGame()" aria-label="Deal new hand">🔀 New Hand</button>
+    </div>
+  </section>
+
+  <!-- ===== RESULT OVERLAY ===== -->
+  <div id="result-overlay" class="result-overlay" role="dialog" aria-modal="true" aria-label="Round result">
+    <div class="result-card" id="result-card">
+      <span class="big-emoji" id="result-emoji"></span>
+      <h3 id="result-title"></h3>
+      <p id="result-msg"></p>
+      <button class="btn btn-amber" onclick="closeResult()" style="width:100%;" aria-label="Continue playing">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  // ============================================================
+  //  UTILITY FUNCTIONS
+  // ============================================================
+  const $ = id => document.getElementById(id);
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+
+  function goHome() {
+    // Reset any active rules panels
+    document.querySelectorAll('.rules-panel').forEach(p => {
+      p.classList.remove('visible');
+    });
+    document.querySelectorAll('.rules-btn').forEach(b => {
+      b.setAttribute('aria-expanded', 'false');
+    });
+    showScreen('screen-dashboard');
+  }
+
+  function launchGame(game) {
+    switch(game) {
+      case 'higher-lower': hlInitGame(); showScreen('screen-higher-lower'); break;
+      case 'kings-cup':    kcInitGame(); showScreen('screen-kings-cup');    break;
+      case 'gauntlet':          gnInitGame(); showScreen('screen-gauntlet');          break;
+      case 'red-black':         rbInitGame(); showScreen('screen-red-black');         break;
+      case 'odds-evens':        oeInitGame(); showScreen('screen-odds-evens');        break;
+      case 'irish-snap':        isInitGame(); showScreen('screen-irish-snap');        break;
+      case 'blackjack-blitz':   bjInitGame(); showScreen('screen-blackjack-blitz');   break;
+    }
+  }
+
+  function toggleRules(prefix) {
+    const panel = $(`${prefix}-rules`);
+    const btn   = panel.previousElementSibling; // the rules button
+    const isVisible = panel.classList.contains('visible');
+    panel.classList.toggle('visible');
+    // find the rules button in the game-screen-top
+    const rulesBtn = panel.closest('.screen').querySelector('.rules-btn');
+    if (rulesBtn) rulesBtn.setAttribute('aria-expanded', (!isVisible).toString());
+  }
+
+  function showToast(msg, duration=2200) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+  }
+
+  function showResult(emoji, title, msg, accentClass='') {
+    $('result-emoji').textContent = emoji;
+    $('result-title').textContent = title;
+    $('result-msg').textContent   = msg;
+    const rc = $('result-card');
+    rc.style.border = '';
+    if (accentClass === 'amber') rc.style.border = '2px solid var(--amber)';
+    if (accentClass === 'danger') rc.style.border = '2px solid var(--danger)';
+    if (accentClass === 'purple') rc.style.border = '2px solid var(--purple)';
+    $('result-overlay').classList.add('visible');
+  }
+
+  function closeResult() {
+    $('result-overlay').classList.remove('visible');
+  }
+
+  function shakeCard(cardId) {
+    const card = $(cardId);
+    card.classList.remove('shake');
+    void card.offsetWidth; // reflow
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 500);
+  }
+
+  // ============================================================
+  //  DECK UTILITIES
+  // ============================================================
+  const SUITS      = ['♠','♥','♦','♣'];
+  const SUIT_COLOR = { '♠':'black','♣':'black','♥':'red','♦':'red' };
+  const VALUES     = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const VALUE_NUM  = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14 };
+
+  function buildDeck() {
+    const deck = [];
+    for (const suit of SUITS) {
+      for (const val of VALUES) {
+        deck.push({ suit, val, num: VALUE_NUM[val] });
+      }
+    }
+    return shuffleDeck(deck);
+  }
+
+  function shuffleDeck(deck) {
+    const d = [...deck];
+    for (let i = d.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [d[i], d[j]] = [d[j], d[i]];
+    }
+    return d;
+  }
+
+  function cardColorClass(suit) {
+    return SUIT_COLOR[suit] === 'red' ? 'card-red' : 'card-black';
+  }
+
+  // ============================================================
+  //  GAME 1 — HIGHER OR LOWER
+  // ============================================================
+  let hlDeck = [];
+  let hlCurrent = null;
+  let hlSipCount = 1;
+  let hlStreak   = 0;
+
+  function hlInitGame() {
+    hlDeck     = buildDeck();
+    hlSipCount = 1;
+    hlStreak   = 0;
+    hlCurrent  = hlDeck.pop();
+    hlRenderCard(hlCurrent, true);
+    hlUpdateStatus();
+  }
+
+  function hlNewGame() {
+    hlInitGame();
+    showToast('🃏 New deck shuffled!');
+  }
+
+  function hlRenderCard(card, animate=false) {
+    const colorClass = cardColorClass(card.suit);
+    const cardEl = $('hl-current-card');
+    cardEl.className = 'playing-card' + (animate ? ' deal-in' : '');
+    // remove deal-in after animation
+    if (animate) setTimeout(() => cardEl.classList.remove('deal-in'), 500);
+
+    $('hl-card-value').textContent    = card.val;
+    $('hl-card-value').className      = `card-value ${colorClass}`;
+    $('hl-card-suit').textContent     = card.suit;
+    $('hl-card-suit').className       = `card-suit ${colorClass}`;
+    $('hl-corner-tl-v').textContent   = card.val;
+    $('hl-corner-tl-s').textContent   = card.suit;
+    $('hl-corner-br-v').textContent   = card.val;
+    $('hl-corner-br-s').textContent   = card.suit;
+
+    const cornerEls = $('hl-current-card').querySelectorAll('.card-corner');
+    cornerEls.forEach(el => {
+      el.className = `card-corner ${el.classList.contains('tl') ? 'tl' : 'br'} ${colorClass}`;
+    });
+  }
+
+  function hlUpdateStatus() {
+    $('hl-deck-count').textContent  = hlDeck.length;
+    $('hl-sip-display').textContent = hlSipCount;
+    $('hl-streak').textContent      = hlStreak;
+
+    const pct = (hlDeck.length / 52) * 100;
+    $('hl-progress').style.width = `${pct}%`;
+  }
+
+  function hlFlipToNext(nextCard, cb) {
+    const cardEl = $('hl-current-card');
+    cardEl.classList.add('flip-out');
+    setTimeout(() => {
+      hlRenderCard(nextCard);
+      cardEl.classList.remove('flip-out');
+      cardEl.classList.add('flip-in');
+      setTimeout(() => cardEl.classList.remove('flip-in'), 250);
+      if (cb) cb();
+    }, 230);
+  }
+
+  function hlGuess(guess) {
+    if (!hlCurrent) return;
+
+    if (hlDeck.length === 0) {
+      hlDeck    = buildDeck();
+      showToast('🔀 Deck reshuffled!');
+    }
+
+    const nextCard = hlDeck.pop();
+    const isHigher = nextCard.num > hlCurrent.num;
+    const isLower  = nextCard.num < hlCurrent.num;
+    const isTie    = nextCard.num === hlCurrent.num;
+
+    let correct = false;
+    if (isTie) {
+      // Tie is a free pass — no sips either way
+      hlFlipToNext(nextCard, () => {
+        hlCurrent = nextCard;
+        hlUpdateStatus();
+      });
+      showToast('🤝 Tie! Free pass — lucky you!');
+      return;
+    } else if (guess === 'higher' && isHigher) {
+      correct = true;
+    } else if (guess === 'lower' && isLower) {
+      correct = true;
+    }
+
+    if (correct) {
+      hlStreak++;
+      const prevSip = hlSipCount;
+      hlSipCount++;
+      hlFlipToNext(nextCard, () => {
+        hlCurrent = nextCard;
+        hlUpdateStatus();
+      });
+      showResult('✅', 'Correct!',
+        `Pass ${prevSip} sip${prevSip !== 1 ? 's' : ''} to someone else! Next sip count is now ${hlSipCount}.`,
+        'amber');
+    } else {
+      const sips = hlSipCount;
+      hlStreak   = 0;
+      hlSipCount = 1;
+      hlFlipToNext(nextCard, () => {
+        shakeCard('hl-current-card');
+        hlCurrent = nextCard;
+        hlUpdateStatus();
+      });
+      showResult('❌', 'Wrong!',
+        `Drink ${sips} sip${sips !== 1 ? 's' : ''}! Sip count resets to 1.`,
+        'danger');
+    }
+  }
+
+  // ============================================================
+  //  GAME 2 — KINGS CUP
+  // ============================================================
+  const KC_RULES = {
+    '2': { title: '2 — You!',          desc: 'Point at someone — they drink 2.', sub: '' },
+    '3': { title: '3 — Me!',           desc: 'You drink 3. Cheers to yourself!', sub: '' },
+    '4': { title: '4 — Floor!',        desc: 'Everyone touch the floor. Last one drinks!', sub: 'GROUP' },
+    '5': { title: '5 — Guys!',         desc: 'All guys (or your left side) drink.', sub: '' },
+    '6': { title: '6 — Chicks!',       desc: 'All girls (or your right side) drink.', sub: '' },
+    '7': { title: '7 — Heaven!',       desc: 'Everyone point up! Last one to raise their hand drinks.', sub: 'GROUP' },
+    '8': { title: '8 — Mate!',         desc: 'Pick a drinking buddy. Every time you drink, they drink — and vice versa, until the next 8.', sub: 'BUDDY SYSTEM' },
+    '9': { title: '9 — Rhyme!',        desc: 'Say a word. Go around — each person must rhyme. First to fail or repeat drinks!', sub: 'CHAIN RULE' },
+    '10': { title: '10 — Categories!', desc: 'Name a category (e.g. beer brands). Go around — first to fail drinks!', sub: 'CHAIN RULE' },
+    'J': { title: 'Jack — Rules!',     desc: 'Make a rule that lasts the rest of the game. Anyone who breaks it drinks!', sub: 'NEW RULE' },
+    'Q': { title: 'Queen — Questions!',desc: 'Ask someone a question. They must reply with a question. First to answer normally drinks!', sub: 'QUESTION MASTER' },
+    'K': { title: 'King — King\'s Cup!', desc: 'Pour some of your drink into the King\'s Cup in the center. The 4th King must finish it all!', sub: 'ADD TO THE CUP' },
+    'A': { title: 'Ace — Waterfall!',  desc: 'Everyone starts drinking. You choose when to stop — but nobody else can stop until the person to their left does!', sub: 'WATERFALL' }
+  };
+
+  let kcDeck   = [];
+  let kcKings  = 0;
+  let kcDrawn  = 0;
+
+  function kcInitGame() {
+    kcDeck  = buildDeck();
+    kcKings = 0;
+    kcDrawn = 0;
+    $('kc-prompt-box').style.display = 'none';
+    $('kc-deck-visual').style.display = 'block';
+    kcUpdateStatus();
+  }
+
+  function kcUpdateStatus() {
+    $('kc-deck-count').textContent = kcDeck.length;
+    $('kc-kings-count').textContent = `${kcKings} / 4`;
+    $('kc-deck-badge').textContent  = kcDeck.length;
+    const pct = (kcDeck.length / 52) * 100;
+    $('kc-progress').style.width = `${pct}%`;
+  }
+
+  function kcDraw() {
+    if (kcDeck.length === 0) {
+      showToast('🎉 All cards drawn! Start a new game.');
+      return;
+    }
+
+    const card = kcDeck.pop();
+    kcDrawn++;
+
+    const rule = KC_RULES[card.val];
+    const isKing = card.val === 'K';
+    if (isKing) {
+      kcKings++;
+    }
+
+    // Update the deck visual
+    kcUpdateStatus();
+
+    // Show drawn card briefly in top area
+    const deckEl = $('kc-deck-visual');
+    deckEl.style.display = 'none';
+
+    // Show the prompt
+    const pbox = $('kc-prompt-box');
+    pbox.style.display = 'block';
+    pbox.style.animation = 'none';
+    void pbox.offsetWidth;
+    pbox.style.animation = '';
+
+    $('kc-rule-title').textContent = `${card.val}${card.suit} — ${rule.title.replace(/.*— /,'')}`;
+    $('kc-rule-desc').textContent  = rule.desc;
+    $('kc-rule-sub').textContent   = rule.sub ? `[${rule.sub}]` : '';
+
+    if (isKing && kcKings === 4) {
+      setTimeout(() => {
+        showResult('🍺', 'FINISH THE CUP!',
+          'You drew the 4th King! You must finish the King\'s Cup. Game over — what a legend.',
+          'danger');
+      }, 300);
+    } else if (kcDeck.length === 0) {
+      setTimeout(() => showToast('🎉 All cards drawn!'), 300);
+    }
+
+    // Re-show deck for next draw
+    setTimeout(() => {
+      if (kcDeck.length > 0) deckEl.style.display = 'block';
+    }, 600);
+  }
+
+  function kcNewGame() {
+    kcInitGame();
+    showToast('👑 New game started!');
+  }
+
+  // ============================================================
+  //  GAME 3 — THE GAUNTLET
+  // ============================================================
+  const GN_CHALLENGES = [
+    // TRUTH
+    { type:'truth', text:'What\'s the most embarrassing thing you\'ve done while drunk?', sips:2 },
+    { type:'truth', text:'Name the last person you texted something you regret.', sips:2 },
+    { type:'truth', text:'What\'s a secret you\'ve never told anyone at this table?', sips:2 },
+    { type:'truth', text:'Who here do you think would crack first in a drinking contest?', sips:2 },
+    { type:'truth', text:'What\'s the wildest dare you\'ve ever accepted?', sips:2 },
+    { type:'truth', text:'Have you ever lied to get out of a social event? What was it?', sips:2 },
+    { type:'truth', text:'What\'s the most money you\'ve spent on drinks in a single night?', sips:2 },
+    { type:'truth', text:'Who\'s the last person you\'d want to be stranded with on a deserted island?', sips:2 },
+    { type:'truth', text:'What\'s the worst cocktail you\'ve ever had? And who made it?', sips:2 },
+    { type:'truth', text:'Name someone at this table you\'d trade lives with for a week.', sips:2 },
+    { type:'truth', text:'What\'s one thing about yourself that surprises people?', sips:2 },
+    { type:'truth', text:'What\'s the most ridiculous excuse you\'ve used to avoid a round?', sips:2 },
+    // DRINK
+    { type:'drink', text:'Take 3 sips. No questions asked.', sips:3 },
+    { type:'drink', text:'Finish your drink or give away 5 sips — your choice.', sips:5 },
+    { type:'drink', text:'Drink once for every person in the room who\'s seen you embarrass yourself.', sips:0 },
+    { type:'drink', text:'Take a sip for every year of this decade you can\'t remember clearly.', sips:0 },
+    { type:'drink', text:'Toast someone! If you don\'t, drink 2.', sips:2 },
+    { type:'drink', text:'Put your phone face-down. Last person to do so takes 3 sips.', sips:3 },
+    { type:'drink', text:'Do your best impression of someone here. If nobody laughs, drink 2.', sips:2 },
+    { type:'drink', text:'Take 1 sip for every social media app on your phone.', sips:0 },
+    { type:'drink', text:'Name 5 cocktails in 10 seconds or drink 3.', sips:3 },
+    { type:'drink', text:'Drink 2 sips — then pick someone to match you.', sips:2 },
+    { type:'drink', text:'If you\'ve sent a drunk text this week, drink 2.', sips:2 },
+    { type:'drink', text:'Oldest player takes a sip. Youngest takes 2.', sips:0 },
+    // GROUP
+    { type:'group', text:'NEVER HAVE I EVER: Never have I ever lied about my age to get into a bar. Anyone who HAS drinks!', sips:1 },
+    { type:'group', text:'GROUP CHALLENGE: Everyone names a drink starting with the letter "B." First repeat or hesitation drinks!', sips:2 },
+    { type:'group', text:'SYNCHRONIZED SIPPING: Everyone drinks at exactly the same time. Any asynchronous sipper drinks again!', sips:1 },
+    { type:'group', text:'VOTE: Who is most likely to become famous? That person drinks (or everyone else — they decide!)', sips:2 },
+    { type:'group', text:'WATERFALL: Drawer starts, everyone to the left follows. You can only stop when the person to your right stops!', sips:0 },
+    { type:'group', text:'THUMB MASTER: Drawer secretly places thumb on table. Everyone follows. Last person to notice drinks!', sips:2 },
+    { type:'group', text:'CATEGORIES: Name types of beer. Go around — no repeats. First to fail drinks!', sips:2 },
+    { type:'group', text:'DEBATE: Pick any topic. Two players argue for 30 seconds. Group votes — loser drinks!', sips:3 },
+    { type:'group', text:'SILENT ROUND: Nobody can speak for 60 seconds. Anyone who talks drinks 2!', sips:2 },
+    { type:'group', text:'RHYME TIME: Drawer says a word. Go around and rhyme. No repeats — first to fail drinks!', sips:2 },
+    { type:'group', text:'HIGH FIVE CHALLENGE: Everyone must high-five someone in 5 seconds. Last two people to high-five both drink!', sips:1 },
+    { type:'group', text:'VOTE: Who is most likely to drunk-text their ex? That person shares 3 sips with whoever they\'d text.', sips:3 },
+  ];
+
+  let gnDeck      = [];
+  let gnCompleted = 0;
+  let gnSkipped   = 0;
+  let gnActive    = false;
+  let gnTimerInterval = null;
+
+  function gnInitGame() {
+    // Build a 52-card-sized challenge deck by repeating/shuffling challenges
+    gnDeck = shuffleDeck([...GN_CHALLENGES, ...GN_CHALLENGES].slice(0, 52));
+    gnCompleted = 0;
+    gnSkipped   = 0;
+    gnActive    = false;
+    clearInterval(gnTimerInterval);
+
+    $('gn-start-hint').style.display    = 'block';
+    $('gn-challenge-box').style.display = 'none';
+    $('gn-draw-btn').style.display      = 'inline-flex';
+    $('gn-done-btn').style.display      = 'none';
+    $('gn-skip-btn').style.display      = 'none';
+    $('gn-draw-btn').textContent        = '⚡ Draw Card';
+
+    gnUpdateStatus();
+  }
+
+  function gnUpdateStatus() {
+    $('gn-deck-count').textContent = gnDeck.length;
+    $('gn-completed').textContent  = gnCompleted;
+    $('gn-skipped').textContent    = gnSkipped;
+    const pct = (gnDeck.length / 52) * 100;
+    $('gn-progress').style.width = `${pct}%`;
+  }
+
+  function gnDraw() {
+    clearInterval(gnTimerInterval);
+
+    if (gnDeck.length === 0) {
+      showResult('🏆', 'Gauntlet Complete!',
+        `Completed: ${gnCompleted} | Skipped: ${gnSkipped}. You survived the Gauntlet!`,
+        'amber');
+      return;
+    }
+
+    const challenge = gnDeck.pop();
+    gnActive = true;
+
+    $('gn-start-hint').style.display    = 'none';
+    const box = $('gn-challenge-box');
+    box.style.display = 'flex';
+    // Remove old type classes
+    box.classList.remove('tod-truth','tod-drink','tod-group');
+
+    const badge = $('gn-type-badge');
+    const timerEl = $('gn-timer');
+    timerEl.style.display = 'none';
+
+    switch(challenge.type) {
+      case 'truth':
+        box.classList.add('tod-truth');
+        badge.className = 'gauntlet-type-badge badge-truth';
+        badge.textContent = '🔍 TRUTH OR DRINK';
+        break;
+      case 'drink':
+        box.classList.add('tod-drink');
+        badge.className = 'gauntlet-type-badge badge-drink';
+        badge.textContent = '🍺 DRINK DARE';
+        break;
+      case 'group':
+        box.classList.add('tod-group');
+        badge.className = 'gauntlet-type-badge badge-group';
+        badge.textContent = '👥 GROUP CHALLENGE';
+        // Start 30s timer for group challenges
+        let t = 30;
+        timerEl.style.display = 'block';
+        timerEl.textContent = `${t}s`;
+        gnTimerInterval = setInterval(() => {
+          t--;
+          timerEl.textContent = `${t}s`;
+          if (t <= 0) { clearInterval(gnTimerInterval); timerEl.style.display = 'none'; }
+        }, 1000);
+        break;
+    }
+
+    $('gn-challenge-text').textContent = challenge.text;
+
+    $('gn-draw-btn').style.display = 'none';
+    $('gn-done-btn').style.display = 'inline-flex';
+    $('gn-skip-btn').style.display = 'inline-flex';
+
+    gnUpdateStatus();
+  }
+
+  function gnComplete() {
+    clearInterval(gnTimerInterval);
+    gnCompleted++;
+    gnActive = false;
+    $('gn-timer').style.display = 'none';
+    $('gn-done-btn').style.display = 'none';
+    $('gn-skip-btn').style.display = 'none';
+    $('gn-draw-btn').style.display = 'inline-flex';
+    gnUpdateStatus();
+    showToast('✅ Challenge complete! Draw the next one.');
+
+    if (gnDeck.length === 0) {
+      showResult('🏆', 'Gauntlet Complete!',
+        `You completed all cards! Completed: ${gnCompleted} | Skipped: ${gnSkipped}. Legends!`,
+        'amber');
+    }
+  }
+
+  function gnSkip() {
+    clearInterval(gnTimerInterval);
+    gnSkipped++;
+    gnActive = false;
+    $('gn-timer').style.display = 'none';
+    shakeCard('gn-challenge-box');
+    setTimeout(() => {
+      $('gn-done-btn').style.display = 'none';
+      $('gn-skip-btn').style.display = 'none';
+      $('gn-draw-btn').style.display = 'inline-flex';
+      showToast('⚡ Skipped! Take 2 sips as penalty.');
+      gnUpdateStatus();
+    }, 300);
+  }
+
+  // ============================================================
+  //  GAME 4 — RED OR BLACK
+  // ============================================================
+  let rbDeck     = [];
+  let rbCurrent  = null;
+  let rbSipCount = 1;
+  let rbStreak   = 0;
+
+  function rbInitGame() {
+    rbDeck     = buildDeck();
+    rbSipCount = 1;
+    rbStreak   = 0;
+    rbCurrent  = rbDeck.pop();
+    rbRenderCard(rbCurrent, true);
+    rbUpdateStatus();
+  }
+
+  function rbNewGame() {
+    rbInitGame();
+    showToast('🃏 New deck shuffled!');
+  }
+
+  function rbRenderCard(card, animate=false) {
+    const colorClass = cardColorClass(card.suit);
+    const cardEl = $('rb-current-card');
+    cardEl.className = 'playing-card' + (animate ? ' deal-in' : '');
+    if (animate) setTimeout(() => cardEl.classList.remove('deal-in'), 500);
+
+    $('rb-card-value').textContent  = card.val;
+    $('rb-card-value').className    = `card-value ${colorClass}`;
+    $('rb-card-suit').textContent   = card.suit;
+    $('rb-card-suit').className     = `card-suit ${colorClass}`;
+    $('rb-corner-tl-v').textContent = card.val;
+    $('rb-corner-tl-s').textContent = card.suit;
+    $('rb-corner-br-v').textContent = card.val;
+    $('rb-corner-br-s').textContent = card.suit;
+
+    const cornerEls = $('rb-current-card').querySelectorAll('.card-corner');
+    cornerEls.forEach(el => {
+      el.className = `card-corner ${el.classList.contains('tl') ? 'tl' : 'br'} ${colorClass}`;
+    });
+  }
+
+  function rbUpdateStatus() {
+    $('rb-deck-count').textContent  = rbDeck.length;
+    $('rb-sip-display').textContent = rbSipCount;
+    $('rb-streak').textContent      = rbStreak;
+    const pct = (rbDeck.length / 52) * 100;
+    $('rb-progress').style.width = `${pct}%`;
+  }
+
+  function rbFlipToNext(nextCard, cb) {
+    const cardEl = $('rb-current-card');
+    cardEl.classList.add('flip-out');
+    setTimeout(() => {
+      rbRenderCard(nextCard);
+      cardEl.classList.remove('flip-out');
+      cardEl.classList.add('flip-in');
+      setTimeout(() => cardEl.classList.remove('flip-in'), 250);
+      if (cb) cb();
+    }, 230);
+  }
+
+  function rbGuess(guess) {
+    if (!rbCurrent) return;
+
+    if (rbDeck.length === 0) {
+      rbDeck = buildDeck();
+      showToast('🔀 Deck reshuffled!');
+    }
+
+    const nextCard  = rbDeck.pop();
+    const nextColor = SUIT_COLOR[nextCard.suit]; // 'red' or 'black'
+    const correct   = guess === nextColor;
+
+    if (correct) {
+      rbStreak++;
+      const prevSip = rbSipCount;
+      rbSipCount++;
+      rbFlipToNext(nextCard, () => {
+        rbCurrent = nextCard;
+        rbUpdateStatus();
+      });
+      showResult('✅', 'Correct!',
+        `Pass ${prevSip} sip${prevSip !== 1 ? 's' : ''} to someone else! Next sip count is now ${rbSipCount}.`,
+        'amber');
+    } else {
+      const sips = rbSipCount;
+      rbStreak   = 0;
+      rbSipCount = 1;
+      rbFlipToNext(nextCard, () => {
+        shakeCard('rb-current-card');
+        rbCurrent = nextCard;
+        rbUpdateStatus();
+      });
+      showResult('❌', 'Wrong!',
+        `Drink ${sips} sip${sips !== 1 ? 's' : ''}! Sip count resets to 1.`,
+        'danger');
+    }
+  }
+
+  // ============================================================
+  //  GAME 5 — ODDS OR EVENS
+  // ============================================================
+  // Ace=1 (Odd), Jack=11 (Odd), Queen=12 (Even), King=13 (Odd)
+  const OE_NUM = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':1 };
+
+  let oeDeck     = [];
+  let oeCurrent  = null;
+  let oeSipCount = 1;
+  let oeStreak   = 0;
+
+  function oeInitGame() {
+    oeDeck     = buildDeck();
+    oeSipCount = 1;
+    oeStreak   = 0;
+    oeCurrent  = oeDeck.pop();
+    oeRenderCard(oeCurrent, true);
+    oeUpdateStatus();
+  }
+
+  function oeNewGame() {
+    oeInitGame();
+    showToast('🃏 New deck shuffled!');
+  }
+
+  function oeRenderCard(card, animate=false) {
+    const colorClass = cardColorClass(card.suit);
+    const cardEl = $('oe-current-card');
+    cardEl.className = 'playing-card' + (animate ? ' deal-in' : '');
+    if (animate) setTimeout(() => cardEl.classList.remove('deal-in'), 500);
+
+    $('oe-card-value').textContent  = card.val;
+    $('oe-card-value').className    = `card-value ${colorClass}`;
+    $('oe-card-suit').textContent   = card.suit;
+    $('oe-card-suit').className     = `card-suit ${colorClass}`;
+    $('oe-corner-tl-v').textContent = card.val;
+    $('oe-corner-tl-s').textContent = card.suit;
+    $('oe-corner-br-v').textContent = card.val;
+    $('oe-corner-br-s').textContent = card.suit;
+
+    const cornerEls = $('oe-current-card').querySelectorAll('.card-corner');
+    cornerEls.forEach(el => {
+      el.className = `card-corner ${el.classList.contains('tl') ? 'tl' : 'br'} ${colorClass}`;
+    });
+  }
+
+  function oeUpdateStatus() {
+    $('oe-deck-count').textContent  = oeDeck.length;
+    $('oe-sip-display').textContent = oeSipCount;
+    $('oe-streak').textContent      = oeStreak;
+    const pct = (oeDeck.length / 52) * 100;
+    $('oe-progress').style.width = `${pct}%`;
+  }
+
+  function oeFlipToNext(nextCard, cb) {
+    const cardEl = $('oe-current-card');
+    cardEl.classList.add('flip-out');
+    setTimeout(() => {
+      oeRenderCard(nextCard);
+      cardEl.classList.remove('flip-out');
+      cardEl.classList.add('flip-in');
+      setTimeout(() => cardEl.classList.remove('flip-in'), 250);
+      if (cb) cb();
+    }, 230);
+  }
+
+  function oeGuess(guess) {
+    if (!oeCurrent) return;
+
+    if (oeDeck.length === 0) {
+      oeDeck = buildDeck();
+      showToast('🔀 Deck reshuffled!');
+    }
+
+    const nextCard = oeDeck.pop();
+    const oeValue  = OE_NUM[nextCard.val];
+    const isOdd    = oeValue % 2 !== 0;
+    const correct  = (guess === 'odd' && isOdd) || (guess === 'even' && !isOdd);
+
+    if (correct) {
+      oeStreak++;
+      const prevSip = oeSipCount;
+      oeSipCount++;
+      oeFlipToNext(nextCard, () => {
+        oeCurrent = nextCard;
+        oeUpdateStatus();
+      });
+      showResult('✅', 'Correct!',
+        `Pass ${prevSip} sip${prevSip !== 1 ? 's' : ''} to someone else! Next sip count is now ${oeSipCount}.`,
+        'amber');
+    } else {
+      const sips = oeSipCount;
+      oeStreak   = 0;
+      oeSipCount = 1;
+      oeFlipToNext(nextCard, () => {
+        shakeCard('oe-current-card');
+        oeCurrent = nextCard;
+        oeUpdateStatus();
+      });
+      showResult('❌', 'Wrong!',
+        `Drink ${sips} sip${sips !== 1 ? 's' : ''}! Sip count resets to 1.`,
+        'danger');
+    }
+  }
+
+  // ============================================================
+  //  GAME 6 — IRISH SNAP
+  // ============================================================
+  const IS_COUNT_NAMES = ['Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
+  const IS_COUNT_VALS  = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+  let isDeck      = [];
+  let isCount     = 0;   // 0 = Ace … 12 = King
+  let isCard      = null;
+  let isInterval  = null;
+  let isRunning   = false;
+  let isSnapsHit  = 0;
+  let isMisses    = 0;
+  let isMatch     = false;   // true when current card matches spoken count
+  let isSnapped   = false;   // true when player has already snapped this round
+
+  function isInitGame() {
+    isDeck     = buildDeck();
+    isCount    = 0;
+    isCard     = null;
+    isRunning  = false;
+    isSnapsHit = 0;
+    isMisses   = 0;
+    isMatch    = false;
+    isSnapped  = false;
+    $('is-snap-btn').disabled = true;
+    $('is-start-btn').style.display = 'inline-flex';
+    $('is-stop-btn').style.display  = 'none';
+    // Reset card to face-down
+    const cardEl = $('is-current-card');
+    cardEl.className = 'playing-card card-back';
+    cardEl.innerHTML = '<div class="card-back-pattern">🃏</div>';
+    $('is-spoken-count').textContent = '—';
+    isUpdateStatus();
+  }
+
+  function isUpdateStatus() {
+    $('is-deck-count').textContent = isDeck.length;
+    $('is-snaps-hit').textContent  = isSnapsHit;
+    $('is-misses').textContent     = isMisses;
+  }
+
+  function isRenderCard(card, animate) {
+    const colorClass = cardColorClass(card.suit);
+    const cardEl = $('is-current-card');
+    cardEl.className = 'playing-card' + (animate ? ' deal-in' : '');
+    if (animate) setTimeout(() => cardEl.classList.remove('deal-in'), 500);
+    cardEl.innerHTML =
+      '<div class="card-corner tl ' + colorClass + '"><span>' + card.val + '</span><br><span>' + card.suit + '</span></div>' +
+      '<div class="card-value ' + colorClass + '">' + card.val + '</div>' +
+      '<div class="card-suit ' + colorClass + '">' + card.suit + '</div>' +
+      '<div class="card-corner br ' + colorClass + '"><span>' + card.val + '</span><br><span>' + card.suit + '</span></div>';
+  }
+
+  function isDealNext() {
+    // Check if previous card was a match and player didn't snap in time
+    if (isMatch && !isSnapped) {
+      isMisses++;
+      isUpdateStatus();
+      showToast('⚡ Miss! Too slow — Drink 2 sips!');
+    }
+    // Replenish deck if exhausted
+    if (isDeck.length === 0) {
+      isDeck = buildDeck();
+      showToast('🔀 Deck reshuffled!');
+    }
+    // Deal the next card
+    isCard    = isDeck.pop();
+    isSnapped = false;
+    // Update spoken count before checking match
+    $('is-spoken-count').textContent = IS_COUNT_NAMES[isCount];
+    // Determine if this card is a snap situation
+    isMatch = (isCard.val === IS_COUNT_VALS[isCount]);
+    // Render card with animation
+    isRenderCard(isCard, true);
+    isUpdateStatus();
+    // Advance counter for the next deal
+    isCount = (isCount + 1) % 13;
+  }
+
+  function isStartGame() {
+    if (isRunning) return;
+    isRunning = true;
+    $('is-snap-btn').disabled = false;
+    $('is-start-btn').style.display = 'none';
+    $('is-stop-btn').style.display  = 'inline-flex';
+    isDealNext(); // deal first card immediately
+    isInterval = setInterval(isDealNext, 2000);
+  }
+
+  function isStopGame() {
+    clearInterval(isInterval);
+    isInterval = null;
+    isRunning  = false;
+    isMatch    = false;
+    isSnapped  = false;
+    $('is-snap-btn').disabled = true;
+    $('is-start-btn').style.display = 'inline-flex';
+    $('is-stop-btn').style.display  = 'none';
+  }
+
+  function isNewGame() {
+    isStopGame();
+    isInitGame();
+    showToast('🃏 New game! Hit Start when ready.');
+  }
+
+  function isHandleSnap() {
+    if (!isRunning) return;
+    if (isSnapped) return; // already snapped this round
+    isSnapped = true;
+    if (isMatch) {
+      isSnapsHit++;
+      isMatch = false;
+      isUpdateStatus();
+      showToast('⚡ SNAP! Pass 3 sips to someone!');
+    } else {
+      isMisses++;
+      isUpdateStatus();
+      showToast('❌ Wrong Snap! Drink 2 sips!');
+    }
+  }
+
+  // ============================================================
+  //  GAME 7 — BLACKJACK BLITZ
+  // ============================================================
+  let bjDeck   = [];
+  let bjHand   = [];
+  let bjScore  = 0;
+  let bjActive = false;
+
+  function bjInitGame() {
+    bjDeck   = buildDeck();
+    bjHand   = [];
+    bjScore  = 0;
+    bjActive = true;
+    $('bj-hand').innerHTML    = '';
+    $('bj-score').textContent = '—';
+    $('bj-score').className   = 'bj-score-display bj-score-safe';
+    $('bj-btn-hit').disabled  = false;
+    $('bj-btn-stay').disabled = false;
+    $('bj-action-row').style.display  = 'flex';
+    $('bj-newgame-row').style.display = 'none';
+    bjDealCard();
+    bjDealCard();
+  }
+
+  function bjNewGame() {
+    bjInitGame();
+    showToast('🃏 New hand dealt!');
+  }
+
+  function bjCalcScore(hand) {
+    let score = 0;
+    let aces  = 0;
+    for (const card of hand) {
+      if (card.val === 'A') {
+        aces++;
+        score += 11;
+      } else if (card.val === 'J' || card.val === 'Q' || card.val === 'K') {
+        score += 10;
+      } else {
+        score += parseInt(card.val, 10);
+      }
+    }
+    while (score > 21 && aces > 0) {
+      score -= 10;
+      aces--;
+    }
+    return score;
+  }
+
+  function bjRenderMiniCard(card) {
+    const colorClass = cardColorClass(card.suit);
+    const div = document.createElement('div');
+    div.className = 'mini-card';
+    div.innerHTML =
+      '<div class="mc-corner tl ' + colorClass + '">' + card.val + '<br>' + card.suit + '</div>' +
+      '<div class="mc-value ' + colorClass + '">' + card.val + '</div>' +
+      '<div class="mc-suit ' + colorClass + '">' + card.suit + '</div>' +
+      '<div class="mc-corner br ' + colorClass + '">' + card.val + '<br>' + card.suit + '</div>';
+    return div;
+  }
+
+  function bjUpdateHand() {
+    const handEl = $('bj-hand');
+    handEl.innerHTML = '';
+    bjHand.forEach(card => handEl.appendChild(bjRenderMiniCard(card)));
+    bjScore = bjCalcScore(bjHand);
+    const scoreEl = $('bj-score');
+    scoreEl.textContent = bjScore;
+    if (bjScore > 21) {
+      scoreEl.className = 'bj-score-display bj-score-bust';
+    } else if (bjScore >= 17) {
+      scoreEl.className = 'bj-score-display bj-score-warning';
+    } else {
+      scoreEl.className = 'bj-score-display bj-score-safe';
+    }
+  }
+
+  function bjDealCard() {
+    if (bjDeck.length === 0) bjDeck = buildDeck();
+    bjHand.push(bjDeck.pop());
+    bjUpdateHand();
+    if (bjScore > 21) {
+      bjActive = false;
+      $('bj-btn-hit').disabled  = true;
+      $('bj-btn-stay').disabled = true;
+      setTimeout(() => {
+        $('bj-action-row').style.display  = 'none';
+        $('bj-newgame-row').style.display = 'flex';
+        showResult('💀', 'BUST!', 'You went over 21! Drink 3 sips!', 'danger');
+      }, 300);
+    }
+  }
+
+  function bjHit() {
+    if (!bjActive) return;
+    bjDealCard();
+  }
+
+  function bjStay() {
+    if (!bjActive) return;
+    bjActive = false;
+    $('bj-btn-hit').disabled  = true;
+    $('bj-btn-stay').disabled = true;
+    $('bj-action-row').style.display  = 'none';
+    $('bj-newgame-row').style.display = 'flex';
+    const sipsToGive = Math.max(0, 21 - bjScore);
+    if (bjScore === 21) {
+      showResult('🎯', 'BLACKJACK BLITZ!', 'Perfect 21! Give out 5 sips — legendary hand!', 'amber');
+    } else {
+      showResult('✋', 'Score: ' + bjScore,
+        'Give out ' + sipsToGive + ' sip' + (sipsToGive !== 1 ? 's' : '') + ' to others! (21 − ' + bjScore + ' = ' + sipsToGive + ')',
+        'amber');
+    }
+  }
+
+  // ============================================================
+  //  BOOT
+  // ============================================================
+  // Show dashboard on load
+  showScreen('screen-dashboard');
+  </script>
+
+  <!-- ===== GAME GUIDE ===== -->
+  <section class="game-guide" aria-labelledby="drinkers-deck-guide-heading" style="max-width:600px;margin:2rem auto;padding:1.5rem 1.25rem;background:rgba(255,179,0,0.05);border:1px solid rgba(255,179,0,0.15);border-radius:12px;color:#cdd6e0;font-family:Inter,system-ui,sans-serif;line-height:1.7;">
+    <h2 id="drinkers-deck-guide-heading" style="color:#ffb300;font-size:1.4rem;font-weight:800;margin:0 0 0.75rem;">📖 The Drinker's Deck – Game Guide</h2>
+    <p style="margin:0 0 0.75rem;">The Drinker's Deck is a premium card game collection featuring multiple themed mini-games in a single app. Pick a game mode and start the party!</p>
+    <h3 style="color:#00ffff;font-size:1rem;font-weight:700;margin:1rem 0 0.4rem;">How to Play</h3>
+    <ol style="margin:0 0 0.75rem;padding-left:1.4rem;">
+        <li>Choose a game from the dashboard — each card reveals a different experience.</li>
+        <li>Enter player names and configure optional settings.</li>
+        <li>Follow the on-screen prompts for each round.</li>
+        <li>Award points or enforce penalties as directed by the card.</li>
+        <li>Play through as many rounds as you like — use the back button to switch decks.</li>
+    </ol>
+    <h3 style="color:#00ffff;font-size:1rem;font-weight:700;margin:1rem 0 0.4rem;">Included Games</h3>
+    <ul style="margin:0;padding-left:1.4rem;">
+        <li><strong>🔼 Higher or Lower</strong> — Guess the next card and pass sips.</li>
+        <li><strong>👑 Kings Cup</strong> — Draw a card and trigger the rule.</li>
+        <li><strong>⚡ The Gauntlet</strong> — Rapid-fire Truth or Drink challenges.</li>
+        <li><strong>🔴 Red or Black</strong> — Guess the colour of the next card.</li>
+        <li><strong>🔢 Odds or Evens</strong> — Guess if the next card is odd or even.</li>
+        <li><strong>⚡ Irish Snap</strong> — React fast! SNAP when card matches the count.</li>
+        <li><strong>🃏 Blackjack Blitz</strong> — Hit or Stay — get closest to 21 without busting.</li>
+    </ul>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="/scripts/load-partials.js"></script>
+
+</body>
+</html>
